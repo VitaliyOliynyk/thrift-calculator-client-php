@@ -14,3 +14,4 @@ gen-csharp/thrifttutorial
 /obj
 /Debug
 *.suo
+/gen/*

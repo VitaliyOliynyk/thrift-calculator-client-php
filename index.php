@@ -1,3 +1,7 @@
+<?php
+error_reporting(E_ALL);
+require_once('DiscoveryServiceClient.php');
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,8 +23,10 @@
         <input type="submit" value="calculate"/>
     </div>
     <?php
-    if($_GET['arg1']) {
-        echo "Result:" ;
+    if(isset($_GET['arg1'])) {
+        $discoveryServiceClient = new DiscoveryServiceClient("127.0.0.1", 10001);
+        $calculatorServicenfo = $discoveryServiceClient->getServerInfo("calculator");
+        echo "Result: host=" , $calculatorServicenfo->host , ", port=" , $calculatorServicenfo->port ;
     }
     ?>
 </form>

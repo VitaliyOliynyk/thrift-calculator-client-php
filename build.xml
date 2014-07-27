@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress ALL -->
+<project name="meritus-sklep-build-script" default="thrift" basedir=".">
+    <description>Builds, tests, and runs the project JavaThrift1.</description>
+    <fileset dir="." id="allfiles">
+        <include name="**/*"/>
+    </fileset>
+    <!--
+            ===========================
+            thrift start
+            ===========================
+    -->
+    <property name="output-dir" location="gen"/>
+    <property name="thrift-definition" location="thrift-discovery-service/service-discovery.thrift"/>
+    <property environment="env"/>
+
+    <target name="thrift-clean">
+        <delete dir="${output-dir}/gen-php"/>
+    </target>
+
+    <target name="-thrift-generate" depends="thrift-clean">
+        <exec executable="${thrift}">
+            <arg value="-o"/>
+            <arg value="${output-dir}"/>
+            <arg value="--gen"/>
+            <arg value="php:oop"/>
+            <arg value="${thrift-definition}"/>
+        </exec>
+    </target>
+
+
+    <target name="-detect-os">
+        <condition property="isWindows">
+            <os family="windows"/>
+        </condition>
+
+        <condition property="isLinux">
+            <os family="unix"/>
+        </condition>
+    </target>
+
+    <target name="thrift" depends="-detect-os">
+
+        <antcall target="-gen-windows"/>
+        <antcall target="-gen-linux"/>
+    </target>
+
+    <target name="-gen-windows" if="isWindows">
+        <echo>Thrift windows</echo>
+        <property name="thrift" location="${env.THRIFT_HOME}/bin/thrift.exe"/>
+        <antcall target="-thrift-generate"/>
+    </target>
+
+    <target name="-gen-linux" if="isLinux">
+        <echo>Thrift linux</echo>
+        <property name="thrift" location="thrift"/>
+        <chmod file="${thrift}" perm="0755"/>
+        <antcall target="-thrift-generate"/>
+    </target>
+    <!--
+            ===========================
+            thrift stop
+            ===========================
+    -->
+</project>
