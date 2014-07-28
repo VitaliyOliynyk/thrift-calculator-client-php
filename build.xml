@@ -1,65 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--suppress ALL -->
-<project name="meritus-sklep-build-script" default="thrift" basedir=".">
-    <description>Builds, tests, and runs the project JavaThrift1.</description>
-    <fileset dir="." id="allfiles">
-        <include name="**/*"/>
-    </fileset>
-    <!--
-            ===========================
-            thrift start
-            ===========================
-    -->
+<project name="thrift-calculator-client-php" default="thrift" basedir=".">
+    <description>thrift-calculator-client-php</description>
+
     <property name="output-dir" location="gen"/>
-    <property name="thrift-definition" location="thrift-discovery-service/service-discovery.thrift"/>
-    <property environment="env"/>
+    <property name="thrift-windows-executable" value="thrift.exe"/>
+    <property name="thrift-linux-executable" value="thrift"/>
 
     <target name="thrift-clean">
         <delete dir="${output-dir}/gen-php"/>
     </target>
 
-    <target name="-thrift-generate" depends="thrift-clean">
-        <exec executable="${thrift}">
-            <arg value="-o"/>
-            <arg value="${output-dir}"/>
-            <arg value="--gen"/>
-            <arg value="php:oop"/>
-            <arg value="${thrift-definition}"/>
-        </exec>
+    <target name="thrift" depends="thrift-clean">
+        <thrift-call thrift-definition="thrift-calculator-thrift/*.thrift"/>
+        <thrift-call thrift-definition="thrift-discovery-service/*.thrift"/>
     </target>
 
+    <macrodef name="thrift-call">
+        <attribute name="thrift-definition"/>
+        <sequential>
+            <echo>Run thrift generate for @{thrift-definition}</echo>
+            <property name="thrift-definition" location="@{thrift-definition}"/>
 
-    <target name="-detect-os">
-        <condition property="isWindows">
-            <os family="windows"/>
-        </condition>
 
-        <condition property="isLinux">
-            <os family="unix"/>
-        </condition>
-    </target>
+            <echo>${thrift}</echo>
+            <condition property="isWindows">
+                <os family="windows"/>
+            </condition>
 
-    <target name="thrift" depends="-detect-os">
+            <condition property="isLinux">
+                <os family="unix"/>
+            </condition>
 
-        <antcall target="-gen-windows"/>
-        <antcall target="-gen-linux"/>
-    </target>
+            <exec executable="${thrift-windows-executable}" osfamily="windows">
+                <arg value="-r"/>
+                <arg value="-o"/>
+                <arg value="${output-dir}"/>
+                <arg value="--gen"/>
+                <arg value="php:oop"/>
+                <arg value="@{thrift-definition}"/>
+            </exec>
 
-    <target name="-gen-windows" if="isWindows">
-        <echo>Thrift windows</echo>
-        <property name="thrift" location="${env.THRIFT_HOME}/bin/thrift.exe"/>
-        <antcall target="-thrift-generate"/>
-    </target>
+            <exec executable="${thrift-windows-executable}" osfamily="unix">
+                <arg value="-r"/>
+                <arg value="-o"/>
+                <arg value="${output-dir}"/>
+                <arg value="--gen"/>
+                <arg value="php:oop"/>
+                <arg value="@{thrift-definition}"/>
+            </exec>
+        </sequential>
+    </macrodef>
 
-    <target name="-gen-linux" if="isLinux">
-        <echo>Thrift linux</echo>
-        <property name="thrift" location="thrift"/>
-        <chmod file="${thrift}" perm="0755"/>
-        <antcall target="-thrift-generate"/>
-    </target>
-    <!--
-            ===========================
-            thrift stop
-            ===========================
-    -->
 </project>

@@ -1,3 +1,6 @@
 [submodule "thrift-discovery-service"]
 	path = thrift-discovery-service
 	url = git@github.com:VitaliyOliynyk/thrift-discovery-service.git
+[submodule "thrift-calculator-thrift"]
+	path = thrift-calculator-thrift
+	url = git@github.com:VitaliyOliynyk/thrift-calculator-thrift.git

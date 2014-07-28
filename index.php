@@ -1,6 +1,9 @@
 <?php
 error_reporting(E_ALL);
-require_once('DiscoveryServiceClient.php');
+require_once('ThriftTemplate.php');
+use thrift\calculator\Operation;
+use thrift\calculator\CalculatorServiceClient;
+use thrift\discoveryservice\DiscoveryServiceClient;
 ?>
 <!DOCTYPE html>
 <html>
@@ -24,9 +27,36 @@ require_once('DiscoveryServiceClient.php');
     </div>
     <?php
     if(isset($_GET['arg1'])) {
-        $discoveryServiceClient = new DiscoveryServiceClient("127.0.0.1", 10001);
-        $calculatorServicenfo = $discoveryServiceClient->getServerInfo("calculator");
-        echo "Result: host=" , $calculatorServicenfo->host , ", port=" , $calculatorServicenfo->port ;
+
+        $discoveryServiceThriftTemplate = new ThriftTemplate("127.0.0.1", 10001);
+        $calculatorServicenfo = $discoveryServiceThriftTemplate->doInThrift(function($protocol) {
+            $client = new DiscoveryServiceClient($protocol);
+            $serverInfo = $client->getInfo("calculator");
+            return $serverInfo;
+        });
+
+
+        $calculatorServiceThriftTemplate = new ThriftTemplate($calculatorServicenfo->host, $calculatorServicenfo->port);
+        $result = $calculatorServiceThriftTemplate->doInThrift(function($protocol) {
+            $client = new CalculatorServiceClient($protocol);
+            $work = new thrift\calculator\Work();
+            $work->arg1 = $_GET['arg1'];
+            $work->arg2 = $_GET['arg2'];
+            $oparations = array(
+                'add' => Operation::ADD,
+                'remove' => Operation::SUBTRACT,
+                'multiply' => Operation::MULTIPLY,
+                'divide' => Operation::DIVIDE,
+            );
+
+            $work->operation = $oparations[$_GET['operation']];
+
+            $serverInfo = $client->calculate($work);
+            return $serverInfo;
+        });
+
+        echo "Calculator service, host=" , $calculatorServicenfo->host , ", port=" , $calculatorServicenfo->port, "</br>" ;
+        echo "Result: ", $result;
     }
     ?>
 </form>
