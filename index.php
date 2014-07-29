@@ -1,13 +1,17 @@
 <?php
 error_reporting(E_ALL);
 require_once('ThriftTemplate.php');
+use thrift\calculator\InvalidOperation;
 use thrift\calculator\Operation;
 use thrift\calculator\CalculatorServiceClient;
 use thrift\discoveryservice\DiscoveryServiceClient;
+use Thrift\Exception\TException;
+
 ?>
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="cp1250"/>
     <title></title>
 </head>
 <body>
@@ -26,18 +30,12 @@ use thrift\discoveryservice\DiscoveryServiceClient;
         <input type="submit" value="calculate"/>
     </div>
     <?php
-    if(isset($_GET['arg1'])) {
-
-        $discoveryServiceThriftTemplate = new ThriftTemplate("127.0.0.1", 10001);
-        $calculatorServicenfo = $discoveryServiceThriftTemplate->doInThrift(function($protocol) {
-            $client = new DiscoveryServiceClient($protocol);
-            $serverInfo = $client->getInfo("calculator");
-            return $serverInfo;
-        });
-
-
-        $calculatorServiceThriftTemplate = new ThriftTemplate($calculatorServicenfo->host, $calculatorServicenfo->port);
-        $result = $calculatorServiceThriftTemplate->doInThrift(function($protocol) {
+    /**
+     * @return callable
+     */
+    function calculatorServiceClientHandler()
+    {
+        return function ($protocol) {
             $client = new CalculatorServiceClient($protocol);
             $work = new thrift\calculator\Work();
             $work->arg1 = $_GET['arg1'];
@@ -50,12 +48,31 @@ use thrift\discoveryservice\DiscoveryServiceClient;
             );
 
             $work->operation = $oparations[$_GET['operation']];
-
             $serverInfo = $client->calculate($work);
             return $serverInfo;
-        });
+        };
+    }
 
-        echo "Calculator service, host=" , $calculatorServicenfo->host , ", port=" , $calculatorServicenfo->port, "</br>" ;
+    if(isset($_GET['arg1'])) {
+
+        $result = '';
+        try {
+            $discoveryServiceThriftTemplate = new ThriftTemplate("127.0.0.1", 10001);
+            $calculatorServicenfo = $discoveryServiceThriftTemplate->doInThrift(function($protocol) {
+                $client = new DiscoveryServiceClient($protocol);
+                $serverInfo = $client->getInfo("calculator");
+                return $serverInfo;
+            });
+
+            $result += "Calculator service, host=" . $calculatorServicenfo->host . ", port=" . $calculatorServicenfo->port. "</br>\n";
+            $calculatorServiceThriftTemplate = new ThriftTemplate($calculatorServicenfo->host, $calculatorServicenfo->port);
+            $result += $calculatorServiceThriftTemplate->doInThrift(calculatorServiceClientHandler());
+        } catch (TException $ex) {
+            $result =  $ex->getMessage();
+        } catch (InvalidOperation $ex) {
+            $result =  $ex->why;
+        }
+
         echo "Result: ", $result;
     }
     ?>
